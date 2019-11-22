@@ -4,15 +4,26 @@
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
     using System.Text;
-    public sealed class KeyStorage: IKeyStorage
+    public sealed class KeyStorage
     {
-        private const int SessionKeyring = -3;
-        private const int UserKeyring = -4;
-        internal readonly KeyStorageConfig keyStorageConfig;
+        internal readonly KeyStorageConfig KeyStorageConfig;
+        internal const string KeyIdentifier = "KeyMngr";
+        internal const string LinuxKeyType = "user";
 
         public KeyStorage(KeyStorageConfig keyStorageConfig)
         {
-            this.keyStorageConfig = keyStorageConfig;
+            if (string.IsNullOrEmpty(keyStorageConfig.ClientId))
+                throw new ArgumentException($"{nameof(keyStorageConfig.ClientId)} cannot be null or empty.");
+
+            if (CommonUtils.IsWindowsPlatform())
+            {
+                if (string.IsNullOrEmpty(keyStorageConfig.CacheDirectory))
+                    throw new ArgumentException($"{nameof(keyStorageConfig.CacheDirectory)} cannot be null or empty.");
+                if (string.IsNullOrEmpty(keyStorageConfig.CacheFileName))
+                    throw new ArgumentException($"{nameof(keyStorageConfig.CacheFileName)} cannot be null or empty.");
+            }
+
+            KeyStorageConfig = keyStorageConfig;
         }
 
         public void ClearContent()
@@ -22,28 +33,67 @@
 
         public byte[] ReadContent()
         {
-            int key = LibKeyUtils.request_key("user", "myapp:12", SessionKeyring);
+            if (CommonUtils.IsLinuxPlatform())
+                return ReadLinuxContent();
+            else if (CommonUtils.IsMacPlatform())
+                return ReadMacOSContent();
+
+            return ReadWindowsContent();
+        }
+
+        public void WriteContent(byte[] content)
+        {
+            if (CommonUtils.IsLinuxPlatform())
+                WriteLinuxContent(content);
+            else if (CommonUtils.IsMacPlatform())
+                WriteMacOSContent(content);
+
+            WriteWindowsContent(content);
+        }
+
+        private byte[] ReadLinuxContent()
+        {
+            int key = LibKeyUtils.request_key(LinuxKeyType, $"{KeyIdentifier}:{KeyStorageConfig.ClientId}", (int)KeyStorageConfig.LinuxKeyring);
             if (key == -1)
-            {
-                return null;
-            }
+                return new byte[0];
 
             long contentLength = LibKeyUtils.keyctl_read_alloc(key, out IntPtr contentPtr);
             string content = Marshal.PtrToStringAuto(contentPtr);
             Marshal.FreeHGlobal(contentPtr);
 
             if (String.IsNullOrEmpty(content))
-            {
-                return null;
-            }
+                return new byte[0];
 
             return Convert.FromBase64String(content);
         }
 
-        public void WriteContent(byte[] content)
+        private byte[] ReadMacOSContent()
         {
-            string encodedContent = Convert.ToBase64String(content);
-            int key = LibKeyUtils.add_key("user", "myapp:12", encodedContent, encodedContent.Length, SessionKeyring);
+            return new byte[0];
+        }
+
+        private byte[] ReadWindowsContent()
+        {
+            return new byte[0];
+        }
+
+        private void WriteLinuxContent(byte[] content)
+        {
+            if (content != null && content.Length > 0)
+            {
+                string encodedContent = Convert.ToBase64String(content);
+                int key = LibKeyUtils.add_key(LinuxKeyType, $"{KeyIdentifier}:{KeyStorageConfig.ClientId}", encodedContent, encodedContent.Length, (int)KeyStorageConfig.LinuxKeyring);
+            }
+        }
+
+        private void WriteMacOSContent(byte[] content)
+        {
+
+        }
+
+        private void WriteWindowsContent(byte[] content)
+        {
+
         }
     }
 }

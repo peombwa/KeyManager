@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graph" Version="1.20.0" />
+    <PackageReference Include="Microsoft.Graph.Auth" Version="1.0.0-preview.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Key.Manager\Key.Manager.csproj" />
+  </ItemGroup>
+
+</Project>
