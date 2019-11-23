@@ -6,7 +6,7 @@ namespace Key.Manager
     {
         private const int SessionKeyring = -3;
         private const int UserKeyring = -4;
-        public string CacheFilePath => Path.Combine(CacheDirectory, CacheFileName);
+        internal string CacheFilePath => Path.Combine(CacheDirectory, CacheFileName);
         public string CacheDirectory { get; set; }
         public string CacheFileName { get; set; }
         public string ClientId { get; set; }

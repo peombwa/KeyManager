@@ -14,17 +14,24 @@ namespace TestConsoleApp
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            var keyStorageConfig = new KeyStorageConfig { ClientId = "myClientId", LinuxKeyring = KeyringType.KEY_SPEC_USER_KEYRING };
+            
             string sampleData = "The quick brown fox jumped over the lazy dog.";
 
 
-            TestLinuxKeyManager(keyStorageConfig, sampleData);
+            // TestLinuxKeyManager(sampleData);
 
-            CallGraphAsync(keyStorageConfig).GetAwaiter().GetResult(); ;
+            CallGraphAsync().GetAwaiter().GetResult(); ;
         }
 
-        private static void TestLinuxKeyManager(KeyStorageConfig keyStorageConfig, string sampleData)
+        private static void TestLinuxKeyManager(string sampleData)
         {
+            var keyStorageConfig = new KeyStorageConfig
+            {
+                LinuxKeyring = KeyringType.KEY_SPEC_USER_KEYRING,
+                CacheDirectory = "D:\\New folder\\tokenStore\\",
+                CacheFileName = "mytoken.bin3",
+                ClientId = "myId"
+            };
             KeyStorage keyStorage = new KeyStorage(keyStorageConfig);
             byte[] data = Encoding.UTF8.GetBytes(sampleData);
 
@@ -32,36 +39,37 @@ namespace TestConsoleApp
             keyStorage.WriteContent(data);
 
             byte[] readData = keyStorage.ReadContent();
-            Console.WriteLine($"Reading data from keyring: {readData.Length}");
+            Console.WriteLine($"Read data from keyring: {readData.Length}");
             string originalContent = Encoding.UTF8.GetString(readData);
             Console.WriteLine($"Original data from keyring: {originalContent}");
         }
 
-        static async Task CallGraphAsync(KeyStorageConfig keyStorageConfig)
+        static async Task CallGraphAsync()
         {
             IPublicClientApplication publicClientApp = PublicClientApplicationBuilder
-            .Create("ClientID")
+            .Create("clientId")
             .Build();
 
-            keyStorageConfig.ClientId = publicClientApp.AppConfig.ClientId;
+            var keyStorageConfig = new KeyStorageConfig
+            {
+                LinuxKeyring = KeyringType.KEY_SPEC_USER_KEYRING,
+                CacheDirectory = "D:\\New folder\\tokenStore\\",
+                CacheFileName = "mytoken.bin3",
+                ClientId = publicClientApp.AppConfig.ClientId
+            };
+
             KeyStorage keyStorage = new KeyStorage(keyStorageConfig);
 
             publicClientApp.UserTokenCache.SetBeforeAccess((args) => {
-                Console.WriteLine($"Before access, the store has changed");
                 var cachedStoreData = keyStorage.ReadContent();
-                Console.WriteLine($"Read '{cachedStoreData?.Length}' bytes from storage");
                 args.TokenCache.DeserializeMsalV3(cachedStoreData, shouldClearExistingCache: true);
             });
 
             publicClientApp.UserTokenCache.SetAfterAccess((args) => {
                 if (args.HasStateChanged)
                 {
-                    Console.WriteLine($"Before Write Store");
                     byte[] data = args.TokenCache.SerializeMsalV3();
-                    Console.WriteLine($"Serializing '{data.Length}' bytes");
-
                     keyStorage.WriteContent(data);
-                    Console.WriteLine($"After write store");
                 }
             });
 

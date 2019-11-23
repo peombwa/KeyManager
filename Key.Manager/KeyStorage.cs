@@ -2,7 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Runtime.InteropServices;
+    using System.Security.Cryptography;
     using System.Text;
     public sealed class KeyStorage
     {
@@ -28,7 +30,12 @@
 
         public void ClearContent()
         {
-            throw new NotImplementedException();
+            if (CommonUtils.IsLinuxPlatform())
+            {
+                int key = LibKeyUtils.request_key(LinuxKeyType, $"{KeyIdentifier}:{KeyStorageConfig.ClientId}", (int)KeyStorageConfig.LinuxKeyring);
+                if (key != -1)
+                    LibKeyUtils.keyctl("invalidate", key);
+            }
         }
 
         public byte[] ReadContent()
@@ -74,7 +81,10 @@
 
         private byte[] ReadWindowsContent()
         {
-            return new byte[0];
+            if (!File.Exists(KeyStorageConfig.CacheFilePath))
+                return new byte[0];
+
+            return File.ReadAllBytes(KeyStorageConfig.CacheFilePath);
         }
 
         private void WriteLinuxContent(byte[] content)
@@ -93,7 +103,12 @@
 
         private void WriteWindowsContent(byte[] content)
         {
+            byte[] secureData = ProtectedData.Protect(content, null, scope: DataProtectionScope.CurrentUser);
 
+            if (!Directory.Exists(KeyStorageConfig.CacheDirectory))
+                Directory.CreateDirectory(KeyStorageConfig.CacheDirectory);
+
+            File.WriteAllBytes(KeyStorageConfig.CacheFilePath, secureData);
         }
     }
 }

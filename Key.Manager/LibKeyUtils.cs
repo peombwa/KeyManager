@@ -47,6 +47,10 @@
 
         [System.Security.SuppressUnmanagedCodeSecurity]
         [DllImport("libkeyutils.so.1", CallingConvention = CallingConvention.StdCall)]
+        public static extern long keyctl(string action, int key);
+
+        [System.Security.SuppressUnmanagedCodeSecurity]
+        [DllImport("libkeyutils.so.1", CallingConvention = CallingConvention.StdCall)]
         public static extern long keyctl_read_alloc(int key, out IntPtr buffer);
 
 #pragma warning restore SA1300 // restore lowercase function name warning.
