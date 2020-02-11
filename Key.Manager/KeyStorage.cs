@@ -1,11 +1,9 @@
 ﻿namespace Key.Manager
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Runtime.InteropServices;
     using System.Security.Cryptography;
-    using System.Text;
     public sealed class KeyStorage
     {
         internal readonly KeyStorageConfig KeyStorageConfig;
@@ -28,6 +26,9 @@
             KeyStorageConfig = keyStorageConfig;
         }
 
+        /// <summary>
+        /// Clear content from a secure store.
+        /// </summary>
         public void ClearContent()
         {
             if (CommonUtils.IsLinuxPlatform())
@@ -38,6 +39,10 @@
             }
         }
 
+        /// <summary>
+        /// Read a <see cref="byte[]"/> content from a secure store.
+        /// </summary>
+        /// <returns><see cref="byte[]"/> content.</returns>
         public byte[] ReadContent()
         {
             if (CommonUtils.IsLinuxPlatform())
@@ -48,6 +53,10 @@
             return ReadWindowsContent();
         }
 
+        /// <summary>
+        /// Write a plain content to a secure store.
+        /// </summary>
+        /// <param name="content">Content to store securely.</param>
         public void WriteContent(byte[] content)
         {
             if (CommonUtils.IsLinuxPlatform())
@@ -58,6 +67,10 @@
             WriteWindowsContent(content);
         }
 
+        /// <summary>
+        /// Get stored content using Linux Kernel Key management API.
+        /// see: https://www.kernel.org/doc/html/latest/security/keys/core.html#id2
+        /// </summary>
         private byte[] ReadLinuxContent()
         {
             int key = LibKeyUtils.request_key(LinuxKeyType, $"{KeyIdentifier}:{KeyStorageConfig.ClientId}", (int)KeyStorageConfig.LinuxKeyring);
@@ -74,11 +87,17 @@
             return Convert.FromBase64String(content);
         }
 
+        /// <summary>
+        /// Not implemented.
+        /// </summary>
         private byte[] ReadMacOSContent()
         {
-            return new byte[0];
+            throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Reads secure contents from a file and decrypts them using Windows DPAPI.
+        /// </summary>
         private byte[] ReadWindowsContent()
         {
             if (!File.Exists(KeyStorageConfig.CacheFilePath))
@@ -87,6 +106,10 @@
             return File.ReadAllBytes(KeyStorageConfig.CacheFilePath);
         }
 
+        /// <summary>
+        /// Store content securely using Linux Kernel Key management API.
+        /// see: https://www.kernel.org/doc/html/latest/security/keys/core.html#id2
+        /// </summary>
         private void WriteLinuxContent(byte[] content)
         {
             if (content != null && content.Length > 0)
@@ -96,11 +119,17 @@
             }
         }
 
+        /// <summary>
+        /// Not implemented.
+        /// </summary>
         private void WriteMacOSContent(byte[] content)
         {
-
+            throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Encrypt and write contents to a file using Windows DPAPI.
+        /// </summary>
         private void WriteWindowsContent(byte[] content)
         {
             byte[] secureData = ProtectedData.Protect(content, null, scope: DataProtectionScope.CurrentUser);
