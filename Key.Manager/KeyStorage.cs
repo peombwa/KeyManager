@@ -103,7 +103,7 @@
             if (!File.Exists(KeyStorageConfig.CacheFilePath))
                 return new byte[0];
 
-            return File.ReadAllBytes(KeyStorageConfig.CacheFilePath);
+            return ProtectedData.Unprotect(File.ReadAllBytes(KeyStorageConfig.CacheFilePath), null, DataProtectionScope.CurrentUser);
         }
 
         /// <summary>
