@@ -30,6 +30,9 @@
         /// </summary>
         KEY_SPEC_USER_SESSION_KEYRING = -5
     }
+    /// <summary>
+    /// An implementation of Linux Kernel Key management API https://www.kernel.org/doc/html/latest/security/keys/core.html#id2.
+    /// </summary>
     internal class LibKeyUtils
     {
 #pragma warning disable SA1300 // disable lowercase function name warning.

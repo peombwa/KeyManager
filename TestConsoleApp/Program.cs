@@ -77,8 +77,9 @@ namespace TestConsoleApp
 
             var graphClient = new GraphServiceClient(authProvider);
             var me = await graphClient.Me.Request().GetAsync();
+            var currentUser = await graphClient.Users[me.Id].Request().GetAsync();
 
-            Console.WriteLine($"Id: {me.Id}, Display Name: {me.DisplayName}, UPN: {me.UserPrincipalName}");
+            Console.WriteLine($"Id: {currentUser.Id}, Display Name: {currentUser.DisplayName}, UPN: {currentUser.UserPrincipalName}");
         }
     }
 }
