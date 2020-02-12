@@ -46,11 +46,17 @@
         public byte[] ReadContent()
         {
             if (CommonUtils.IsLinuxPlatform())
+            {
                 return ReadLinuxContent();
+            }
             else if (CommonUtils.IsMacPlatform())
+            {
                 return ReadMacOSContent();
-
-            return ReadWindowsContent();
+            }
+            else
+            {
+                return ReadWindowsContent();
+            }
         }
 
         /// <summary>
@@ -60,11 +66,17 @@
         public void WriteContent(byte[] content)
         {
             if (CommonUtils.IsLinuxPlatform())
+            {
                 WriteLinuxContent(content);
+            }
             else if (CommonUtils.IsMacPlatform())
+            {
                 WriteMacOSContent(content);
-
-            WriteWindowsContent(content);
+            }
+            else
+            {
+                WriteWindowsContent(content);
+            }
         }
 
         /// <summary>
