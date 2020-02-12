@@ -1,4 +1,5 @@
-﻿using Key.Manager;
+﻿using CommandLine;
+using Key.Manager;
 using Microsoft.Graph;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
@@ -9,52 +10,26 @@ using System.Threading.Tasks;
 
 namespace TestConsoleApp
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            
-            string sampleData = "The quick brown fox jumped over the lazy dog.";
-
-
-            // TestLinuxKeyManager(sampleData);
-
-            CallGraphAsync().GetAwaiter().GetResult(); ;
+            Parser.Default.ParseArguments<Options>(args)
+                .WithParsed(opts => CallGraphAsync(opts.ClientId, opts.CacheDirectory, opts.CacheFileName).GetAwaiter().GetResult())
+                .WithNotParsed((errs) => HandleError(errs));
         }
 
-        private static void TestLinuxKeyManager(string sampleData)
-        {
-            var keyStorageConfig = new KeyStorageConfig
-            {
-                LinuxKeyring = KeyringType.KEY_SPEC_USER_KEYRING,
-                CacheDirectory = "D:\\New folder\\tokenStore\\",
-                CacheFileName = "mytoken.bin3",
-                ClientId = "myId"
-            };
-            KeyStorage keyStorage = new KeyStorage(keyStorageConfig);
-            byte[] data = Encoding.UTF8.GetBytes(sampleData);
-
-            Console.WriteLine($"Writing data to keyring: {data.Length}");
-            keyStorage.WriteContent(data);
-
-            byte[] readData = keyStorage.ReadContent();
-            Console.WriteLine($"Read data from keyring: {readData.Length}");
-            string originalContent = Encoding.UTF8.GetString(readData);
-            Console.WriteLine($"Original data from keyring: {originalContent}");
-        }
-
-        static async Task CallGraphAsync()
+        static async Task CallGraphAsync(string clientId, string CacheDirectory, string CacheFileName)
         {
             IPublicClientApplication publicClientApp = PublicClientApplicationBuilder
-            .Create("clientId")
+            .Create(clientId)
             .Build();
 
             var keyStorageConfig = new KeyStorageConfig
             {
                 LinuxKeyring = KeyringType.KEY_SPEC_USER_KEYRING,
-                CacheDirectory = "D:\\New folder\\tokenStore\\",
-                CacheFileName = "mytoken.bin3",
+                CacheDirectory = CacheDirectory,
+                CacheFileName = $"{CacheFileName}.bin3",
                 ClientId = publicClientApp.AppConfig.ClientId
             };
 
@@ -77,8 +52,17 @@ namespace TestConsoleApp
 
             var graphClient = new GraphServiceClient(authProvider);
             var me = await graphClient.Me.Request().GetAsync();
+            var currentUser = await graphClient.Users[me.Id].Request().GetAsync();
 
-            Console.WriteLine($"Id: {me.Id}, Display Name: {me.DisplayName}, UPN: {me.UserPrincipalName}");
+            Console.WriteLine($"Id: {currentUser.Id}, Display Name: {currentUser.DisplayName}, UPN: {currentUser.UserPrincipalName}");
+        }
+
+        private static void HandleError(IEnumerable<CommandLine.Error> errors)
+        {
+            foreach (CommandLine.Error item in errors)
+            {
+                Console.Write(item.ToString());
+            }
         }
     }
 }
